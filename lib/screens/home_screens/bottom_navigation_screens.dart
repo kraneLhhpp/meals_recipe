@@ -5,6 +5,7 @@ import 'package:nutrition_api/screens/home_screens/account_bar.dart';
 import 'package:nutrition_api/screens/home_screens/home_bar.dart';
 import 'package:nutrition_api/screens/home_screens/notification_bar.dart';
 import 'package:nutrition_api/screens/home_screens/search_bar_screen.dart';
+import 'package:nutrition_api/service/api/api_service.dart';
 
 
 class BottomNavigationScreens extends StatefulWidget {
@@ -14,7 +15,7 @@ class BottomNavigationScreens extends StatefulWidget {
   State<BottomNavigationScreens> createState() => _BottomNavigationScreensState();
 }
 
-class _BottomNavigationScreensState extends State<BottomNavigationScreens> {
+class _BottomNavigationScreensState extends State<BottomNavigationScreens> {  
   final List<Widget> _screens = [
     HomeBar(),
     SearchBarScreen(),
@@ -22,10 +23,12 @@ class _BottomNavigationScreensState extends State<BottomNavigationScreens> {
     AccountBar()
   ];
 
+  final ApiService _apiService = ApiService();
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => RecipeBloc(),
+      create: (context) => RecipeBloc(_apiService)..add(LoadHomeData()),
       child: BlocBuilder<RecipeBloc, RecipeState>(
         builder: (context, state) {
           return Scaffold(
@@ -37,17 +40,17 @@ class _BottomNavigationScreensState extends State<BottomNavigationScreens> {
               },
               items: <BottomNavigationBarItem>[
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.home, color: Color(0xFFD9D9D9)),
+                  icon: Icon(Icons.home, color: state.selectedIndex == 0 ?  const Color(0xFF4D8194) : Colors.black),
                   label: 'Home'
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.search, color: Color(0xFFD9D9D9)),
+                  icon: Icon(Icons.search, color: state.selectedIndex == 1 ?const Color(0xFF4D8194) :  Colors.black ),
                   label: 'Search'
                 ),BottomNavigationBarItem(
-                  icon: Icon(Icons.notifications, color: Color(0xFFD9D9D9)),
+                  icon: Icon(Icons.notifications, color: state.selectedIndex == 2 ? const Color(0xFF4D8194) : Colors.black),
                   label: 'Notification'
                 ),BottomNavigationBarItem(
-                  icon: Icon(Icons.person, color: Color(0xFFD9D9D9)),
+                  icon: Icon(Icons.person, color: state.selectedIndex == 3 ? const Color(0xFF4D8194) : Colors.black),
                   label: 'Account'
                 ),
               ], 
