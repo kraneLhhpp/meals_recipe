@@ -1,4 +1,5 @@
 import 'package:email_validator/email_validator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:nutrition_api/screens/auth_screens/widgets/custom_elevated_button.dart';
 import 'package:nutrition_api/screens/auth_screens/widgets/custom_text_field.dart';
@@ -79,13 +80,47 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
                 CustomElevatedButton(
-                  onTap: (){
-                    if(!_formKey.currentState!.validate()) return;
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => const BottomNavigationScreens())
-                    );
-                  } 
+                  onTap: () async {
+                    if (!_formKey.currentState!.validate()) return;
+
+                    try {
+                      await FirebaseAuth.instance.signInWithEmailAndPassword(
+                        email: _emailController.text.trim(),
+                        password: _passwordController.text.trim(),
+                      );
+                      if(!context.mounted) return;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BottomNavigationScreens()),
+                      );
+                    } on FirebaseAuthException catch (e) {
+                      String errorMessage;
+
+                      switch (e.code) {
+                        case 'invalid-email':
+                          errorMessage = 'The email address is not valid.';
+                          break;
+                        case 'user-disabled':
+                          errorMessage = 'This user has been disabled.';
+                          break;
+                        case 'user-not-found':
+                          errorMessage = 'No user found for this email.';
+                          break;
+                        case 'wrong-password':
+                          errorMessage = 'Incorrect password. Try again.';
+                          break;
+                        case 'too-many-requests':
+                          errorMessage = 'Too many attempts. Try again later.';
+                          break;
+                        default:
+                          errorMessage = 'Login error. Please try again.';
+                      }
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(errorMessage)),
+                      );
+                    }
+                  },
                 )
               ],
             ),

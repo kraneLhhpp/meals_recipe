@@ -1,43 +1,51 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nutrition_api/screens/auth_screens/login_screen.dart'; // <- импорт твоей Login страницы
 import 'package:nutrition_api/screens/auth_screens/welcome_screen.dart';
-import 'package:nutrition_api/screens/home_screens/home_bar.dart';
 import 'package:logger/logger.dart';
 
-
 class VerifyEmailScreen extends StatefulWidget {
-
   const VerifyEmailScreen({super.key});
 
   @override
-  State<VerifyEmailScreen> createState() => _VerifyEmailState();
+  State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
 }
 
-class _VerifyEmailState extends State<VerifyEmailScreen> {
-  Timer? timer; 
-  bool isEmailVerified  = false;
+class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
+  Timer? timer;
+  bool isEmailVerified = false;
   bool canResendEmail = false;
   final logger = Logger();
-
 
   @override
   void initState() {
     super.initState();
+    _initVerification();
   }
 
-  Future<void> initVerification()async{
+  Future<void> _initVerification() async {
     final user = FirebaseAuth.instance.currentUser;
-    if(user == null){
-      if(mounted) Navigator.pop(context);
+    if (user == null) {
+      if (mounted) Navigator.pop(context);
       return;
     }
-    isEmailVerified = user.emailVerified;
 
-    if(!isEmailVerified){
-      await sendVerificationEmail();
-      timer = Timer.periodic(Duration(seconds: 4), (_) => checkEmailVerified());
+    try {
+      await user.reload();
+      isEmailVerified = user.emailVerified;
+    } catch (e) {
+      logger.e('Error reloading user: $e');
     }
+
+    if (isEmailVerified) {
+      _goToLogin();
+      return;
+    }
+
+    await sendVerificationEmail();
+
+    timer = Timer.periodic(const Duration(seconds: 5), (_) => _checkEmailVerified());
   }
 
   @override
@@ -46,57 +54,64 @@ class _VerifyEmailState extends State<VerifyEmailScreen> {
     super.dispose();
   }
 
-  Future<void> checkEmailVerified()async{
-    final user = FirebaseAuth.instance.currentUser;
-
-    if(user == null){
+  void _checkEmailVerified() {
+    if (!mounted) {
       timer?.cancel();
       return;
     }
 
-    await user.reload();
-    final verified = user.emailVerified;
-
-    if(!mounted)return;
-
-    setState(() {
-      isEmailVerified = verified;
-    });
-
-    if(verified){
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
       timer?.cancel();
-      Navigator.push(
-        context, 
-        MaterialPageRoute(builder: (context) => const HomeBar())
+      return;
+    }
+
+    user.reload().then((_) {
+      final verified = user.emailVerified;
+
+      if (!mounted) return;
+
+      setState(() => isEmailVerified = verified);
+
+      if (verified) {
+        timer?.cancel();
+        _goToLogin();
+      }
+    }).catchError((e) {
+      logger.e('Error checking email verification: $e');
+    });
+  }
+
+  Future<void> sendVerificationEmail() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await user.sendEmailVerification();
+
+      if (!mounted) return;
+      setState(() => canResendEmail = false);
+
+      await Future.delayed(const Duration(seconds: 5));
+
+      if (!mounted) return;
+      setState(() => canResendEmail = true);
+    } catch (e) {
+      logger.e('Error sending email: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to send email')),
       );
     }
   }
 
-  Future<void> sendVerificationEmail()async{
-    try{
-      final user = FirebaseAuth.instance.currentUser;
-
-      if(user == null)return;
-
-      await user.sendEmailVerification();
-
-      if(!mounted)return;
-
-      setState(() {
-        canResendEmail = false;
-      });
-
-      if(!mounted)return;
-
-      setState(() {
-        canResendEmail=true;
-      });
-    }catch (e){
-      logger.e('Error sending email: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send Email'))
-      );
-    }
+  void _goToLogin() {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()), // <- здесь Login page
+      (route) => false,
+    );
   }
 
   @override
@@ -107,37 +122,39 @@ class _VerifyEmailState extends State<VerifyEmailScreen> {
         title: const Text('Verify Email'),
       ),
       body: SafeArea(
-        child:  Center(
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.all(25),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.email_outlined),
+                const Icon(Icons.email_outlined, size: 80),
                 const SizedBox(height: 20),
                 const Text(
-                  'A confirmation email has been sent. Please check your email.'
+                  'A confirmation email has been sent. Please check your email.',
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                if(!isEmailVerified) const CircularProgressIndicator(),
+                if (!isEmailVerified) const CircularProgressIndicator(),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: canResendEmail ? sendVerificationEmail : null, 
-                  child: const Text('Resend email')
+                  onPressed: canResendEmail ? sendVerificationEmail : null,
+                  child: const Text('Resend email'),
                 ),
-                const  SizedBox(height: 15),
+                const SizedBox(height: 15),
                 ElevatedButton(
-                  onPressed: (){
+                  onPressed: () {
                     Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => const WelcomeScreen(),) 
+                      context,
+                      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
                     );
-                  }, 
-                  child: const Text('Back')
-                )
+                  },
+                  child: const Text('Back'),
+                ),
               ],
             ),
           ),
-        )
+        ),
       ),
     );
   }
