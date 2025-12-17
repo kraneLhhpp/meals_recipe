@@ -18,18 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   bool isHiddenPassword = true;
 
-  void togglePasswordView() {
-    setState(() {
-      isHiddenPassword = !isHiddenPassword;
-    });
-  }
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,9 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
         title: Text('Log In'),
         centerTitle: true,
         leading: IconButton(
-          onPressed: (){
+          onPressed: () {
             Navigator.pop(context);
-          }, 
+          },
           icon: Icon(Icons.arrow_back_ios_new, color: Colors.black),
         ),
       ),
@@ -54,23 +42,23 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CustomTextField(
-                  hintText: 'Email', 
+                  hintText: 'Email',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  validator: (email) => 
+                  validator: (email) =>
                       email != null && !EmailValidator.validate(email)
-                        ? 'Input correct email'
-                        : null,
+                      ? 'Input correct email'
+                      : null,
                 ),
                 const SizedBox(height: 15),
                 CustomTextField(
-                  hintText: 'Password', 
+                  hintText: 'Password',
                   controller: _passwordController,
                   obscure: true,
                   validator: (v) {
-                    if(v == null || v.isEmpty){
+                    if (v == null || v.isEmpty) {
                       return 'Password cannot be empty';
-                    }else if(v.length<6){
+                    } else if (v.length < 6) {
                       return 'Password must be at least 6 characters';
                     }
                     return null;
@@ -88,10 +76,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         email: _emailController.text.trim(),
                         password: _passwordController.text.trim(),
                       );
-                      if(!context.mounted) return;
+                      if (!context.mounted) return;
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const BottomNavigationScreens()),
+                        MaterialPageRoute(
+                          builder: (_) => const BottomNavigationScreens(),
+                        ),
                       );
                     } on FirebaseAuthException catch (e) {
                       String errorMessage;
@@ -116,17 +106,29 @@ class _LoginScreenState extends State<LoginScreen> {
                           errorMessage = 'Login error. Please try again.';
                       }
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(errorMessage)),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(errorMessage)));
                     }
                   },
-                )
+                ),
               ],
             ),
           ),
-        )
+        ),
       ),
     );
+  }
+
+  void togglePasswordView() {
+    setState(() {
+      isHiddenPassword = !isHiddenPassword;
+    });
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
   }
 }
