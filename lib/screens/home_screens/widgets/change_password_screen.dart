@@ -12,27 +12,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
-  bool isHiddenPassword = true; 
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void togglePasswordView() {
-    setState(() {
-      isHiddenPassword = !isHiddenPassword;
-    });
-  }
+  bool isHiddenPassword = true;
 
   Future<void> changePassword() async {
     if (!_formKey.currentState!.validate()) return;
     try {
       setState(() => isLoading = true);
 
-      await FirebaseAuth.instance.currentUser!
-          .updatePassword(_passwordController.text.trim());
+      await FirebaseAuth.instance.currentUser!.updatePassword(
+        _passwordController.text.trim(),
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -41,9 +30,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Error')));
     } finally {
       setState(() => isLoading = false);
     }
@@ -61,12 +50,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             children: [
               TextFormField(
                 controller: _passwordController,
-                obscureText: isHiddenPassword, 
+                obscureText: isHiddenPassword,
                 decoration: InputDecoration(
                   labelText: 'New password',
                   suffixIcon: IconButton(
                     icon: Icon(
-                      isHiddenPassword ? Icons.visibility_off : Icons.visibility,
+                      isHiddenPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: togglePasswordView,
                   ),
@@ -102,5 +93,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void togglePasswordView() {
+    setState(() {
+      isHiddenPassword = !isHiddenPassword;
+    });
   }
 }

@@ -7,12 +7,11 @@ import 'package:nutrition_api/service/model/meals.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
-  
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Фон как на картинке
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'My Favorites',
@@ -22,11 +21,10 @@ class FavoritesScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        centerTitle: false, // Заголовок слева
+        centerTitle: false,
         backgroundColor: Colors.white,
         elevation: 0,
-        actions: [
-        ],
+        actions: [],
       ),
       body: BlocBuilder<RecipeBloc, RecipeState>(
         builder: (context, state) {
@@ -34,9 +32,7 @@ class FavoritesScreen extends StatelessWidget {
             final favorites = state.favoriteMeals;
 
             if (favorites.isEmpty) {
-              return const Center(
-                child: Text('No favorites yet'),
-              );
+              return const Center(child: Text('No favorites yet'));
             }
 
             return Padding(
@@ -44,8 +40,8 @@ class FavoritesScreen extends StatelessWidget {
               child: GridView.builder(
                 itemCount: favorites.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 2 колонки
-                  childAspectRatio: 0.75, // Соотношение сторон карточки (высота к ширине)
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 20,
                 ),
@@ -86,51 +82,56 @@ class _FavoriteItemCard extends StatelessWidget {
       ),
       child: GestureDetector(
         onTap: () async {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => const Center(
-                child: CircularProgressIndicator(color: Color(0xFF4D8194)),
-              ),
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const Center(
+              child: CircularProgressIndicator(color: Color(0xFF4D8194)),
+            ),
+          );
+
+          try {
+            final fullMealDetails = await _apiService.fetchMealDetails(
+              meal.idMeal,
             );
 
-            try {
-              final fullMealDetails = await _apiService.fetchMealDetails(meal.idMeal);
+            if (!context.mounted) return;
+            Navigator.of(context).pop();
 
-              if (!context.mounted) return;
-              Navigator.of(context).pop();
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: context.read<RecipeBloc>(),
-                    child: MealDetailsScreen(meal: fullMealDetails),
-                  ),
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<RecipeBloc>(),
+                  child: MealDetailsScreen(meal: fullMealDetails),
                 ),
-              );
-            } catch (e) {
-              if (!context.mounted) return;
-              Navigator.of(context).pop();
+              ),
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            Navigator.of(context).pop();
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error loading recipe: $e')),
-              );
-            }
-          },
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Error loading recipe: $e')));
+          }
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: Image.network(
                     meal.strMealThumb,
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (_,__,___) => Container(height: 120, color: Colors.grey[300]),
+                    errorBuilder: (_, __, ___) =>
+                        Container(height: 120, color: Colors.grey[300]),
                   ),
                 ),
                 Positioned(
@@ -149,14 +150,14 @@ class _FavoriteItemCard extends StatelessWidget {
                       child: const Icon(
                         Icons.favorite,
                         size: 18,
-                        color: Color(0xFF4D8194), 
+                        color: Color(0xFF4D8194),
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-            
+
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -170,16 +171,13 @@ class _FavoriteItemCard extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF0A2533),
-                      fontFamily: 'Times New Roman', 
+                      fontFamily: 'Times New Roman',
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Canadian', 
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
-                    ),
+                    'Canadian',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                   ),
                 ],
               ),

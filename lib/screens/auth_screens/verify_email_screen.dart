@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:nutrition_api/screens/auth_screens/login_screen.dart'; // <- импорт твоей Login страницы
+import 'package:nutrition_api/screens/auth_screens/login_screen.dart';
 import 'package:nutrition_api/screens/auth_screens/welcome_screen.dart';
 import 'package:logger/logger.dart';
 
@@ -17,12 +17,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   bool isEmailVerified = false;
   bool canResendEmail = false;
   final logger = Logger();
-
-  @override
-  void initState() {
-    super.initState();
-    _initVerification();
-  }
 
   Future<void> _initVerification() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -45,7 +39,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     await sendVerificationEmail();
 
-    timer = Timer.periodic(const Duration(seconds: 5), (_) => _checkEmailVerified());
+    timer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _checkEmailVerified(),
+    );
   }
 
   @override
@@ -66,20 +63,23 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       return;
     }
 
-    user.reload().then((_) {
-      final verified = user.emailVerified;
+    user
+        .reload()
+        .then((_) {
+          final verified = user.emailVerified;
 
-      if (!mounted) return;
+          if (!mounted) return;
 
-      setState(() => isEmailVerified = verified);
+          setState(() => isEmailVerified = verified);
 
-      if (verified) {
-        timer?.cancel();
-        _goToLogin();
-      }
-    }).catchError((e) {
-      logger.e('Error checking email verification: $e');
-    });
+          if (verified) {
+            timer?.cancel();
+            _goToLogin();
+          }
+        })
+        .catchError((e) {
+          logger.e('Error checking email verification: $e');
+        });
   }
 
   Future<void> sendVerificationEmail() async {
@@ -99,9 +99,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     } catch (e) {
       logger.e('Error sending email: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send email')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to send email')));
     }
   }
 
@@ -109,7 +109,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()), // <- здесь Login page
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
   }
@@ -118,9 +118,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF4D8194),
-      appBar: AppBar(
-        title: const Text('Verify Email'),
-      ),
+      appBar: AppBar(title: const Text('Verify Email')),
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -157,5 +155,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initVerification();
   }
 }
