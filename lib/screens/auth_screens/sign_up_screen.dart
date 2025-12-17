@@ -1,4 +1,5 @@
 import 'package:email_validator/email_validator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:nutrition_api/screens/auth_screens/verify_email_screen.dart';
 import 'package:nutrition_api/screens/auth_screens/widgets/custom_elevated_button.dart';
@@ -40,6 +41,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF70B9BE),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: const Color(0xFF70B9BE),
         title: Text('Sign Up'),
@@ -52,7 +54,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
           child: Form(
             key: _formKey,
@@ -105,13 +107,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 30),
                 CustomElevatedButton(
-                  onTap: (){
-                    if(!_formKey.currentState!.validate()) return;
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => const VerifyEmailScreen())
-                    );
-                  } 
+                  onTap: () async {
+                    if (!_formKey.currentState!.validate()) return;
+          
+                    try {
+                      final credential =
+                          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                        email: _emailController.text.trim(),
+                        password: _passwordController.text.trim(),
+                      );
+          
+                      final user = credential.user;
+          
+                      if (user != null) {
+                        await user.updateDisplayName(
+                          '${_fNameController.text.trim()} ${_lNameController.text.trim()}',
+                        );
+                        await user.reload();
+                      }
+          
+                      if(!context.mounted) return;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const VerifyEmailScreen()),
+                      );
+                    } on FirebaseAuthException catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.message ?? 'Sign up error')),
+                      );
+                    }
+                  }
                 )
               ],
             ),
